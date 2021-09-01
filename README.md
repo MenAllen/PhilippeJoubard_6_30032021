@@ -35,12 +35,3 @@ wants to create a web application where users can add their preferred own sauces
 - Languages: HTML, CSS, Javascript
 
 ## Additinal functions
-
-- A badge is made available on each page to update the user with the number of articles in the basket
-- When a request is sent to server, a spinner is activated to show the front-end app is running and requesting answer from server
-- When an error message is received from server, an alert panel (red) is displayed with the error code received
-_ The order page lists the products ordered =, their quantity and the sub-total price
-
-## Improvments & suggested add-ons
-- Adding quantity info for each product in the product order data would simplify and fluidify the exchange between front and backend
-- Some images on server side need to be compressed: for example, oak_5.jpg is 4712Ko
