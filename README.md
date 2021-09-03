@@ -20,7 +20,7 @@ A specifications document for te API is available.
 			If your browser fails to launch, or shows a 404 error, navigate your browser to http://localhost:8080.
 				The app should reload automatically when you make a change to a file.
 				Use Ctrl+C in the terminal to stop the local server.
-- For backend application, just clone the repo https://github.com/MenAllen/PhilippeJoubard_6_30032021.git, launch npm install and npm start
+- For backend application, just clone the repo https://github.com/MenAllen/PhilippeJoubard_6_30032021.git, launch "npm install" then "node server"
 
 
 ## General Description

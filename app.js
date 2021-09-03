@@ -3,16 +3,19 @@ const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const path = require("path");
 
-// Notre stuff
+const sauceRoutes = require("./routes/sauce");
 const userRoutes = require("./routes/user");
 
-// mongodb+srv://menallen:<password>@cluster0.q0wyp.mongodb.net/myFirstDatabase?retryWrites=true&w=majority
+require("dotenv").config(); // load environment variables from the .env file into process.env
+// connexion to mongodb
 mongoose
-	.connect("mongodb+srv://menallen:Kerguelen01@cluster0.q0wyp.mongodb.net/myFirstDatabase?retryWrites=true&w=majority", { useNewUrlParser: true, useUnifiedTopology: true })
+	.connect(process.env.DB, { useNewUrlParser: true, useUnifiedTopology: true })
 	.then(() => console.log("Connexion à MongoDB réussie !"))
 	.catch(() => console.log("Connexion à MongoDB échouée !"));
 
 const app = express();
+
+app.use("/images", express.static(path.join(__dirname, "images")));
 
 app.use((req, res, next) => {
 	res.setHeader("Access-Control-Allow-Origin", "*");
@@ -24,6 +27,7 @@ app.use((req, res, next) => {
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
+app.use("/api/sauces", sauceRoutes);
 app.use("/api/auth", userRoutes);
 
 module.exports = app;
