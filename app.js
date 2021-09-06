@@ -1,5 +1,4 @@
 const express = require("express");
-const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const path = require("path");
 
@@ -24,8 +23,8 @@ app.use((req, res, next) => {
 	next();
 });
 
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
+// Remplace Appel à BodyParser maintenant inclus dans Express
+app.use(express.json());
 
 app.use("/api/sauces", sauceRoutes);
 app.use("/api/auth", userRoutes);
