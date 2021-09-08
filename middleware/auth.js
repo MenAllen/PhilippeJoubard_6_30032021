@@ -10,22 +10,18 @@ module.exports = (req, res, next) => {
 		const decodedToken = jwt.verify(token, process.env.TOKEN); // décodage du token par jsonwebtoken
 		const userId = decodedToken.userId;
 
-		// Ici il faut s'assurer qu'une modification de sauce n'est autorisée que par le créateur de la sauce:
-		// 			Si la requête body existe (PUT et POST) et que le userId dans l'objet Sauce diffère
-		// 			du userId extrait du token, alors on sort en exception
+		// Si la requête body existe (PUT et POST) et que son userId diffère
+		// du userId extrait du token, alors on sort en exception
 
 		if (req.body.userId && req.body.userId !== userId) {
+			console.log("invalid user ID");
 			throw "Invalid user ID"; // on sort en exception du try -> catch
 		} else {
-			// 			sinon, on passe le userId extrait du token pour vérifier au niveau controller dans le cas du DELETE
+			// Sinon, on passe le userId extrait du token pour vérifier quand nécessaire au niveau controller
 			req.user = userId;
-			console.log(req.user);
 			next();
 		}
 	} catch {
-		console.log("Invalid request");
-		res.status(403).json({
-			error: new Error("Unauthorized request"),
-		});
+		res.status(403).json({ message: "Unauthorized request" });
 	}
 };

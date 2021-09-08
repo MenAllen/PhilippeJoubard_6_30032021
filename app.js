@@ -5,8 +5,10 @@ const path = require("path");
 const sauceRoutes = require("./routes/sauce");
 const userRoutes = require("./routes/user");
 
-require("dotenv").config(); // load environment variables from the .env file into process.env
-// connexion to mongodb
+// Chargement des variables d'environnement à partir du fichier .env
+require("dotenv").config();
+
+// connexion à la base mongodb
 mongoose
 	.connect(process.env.DB, { useNewUrlParser: true, useUnifiedTopology: true })
 	.then(() => console.log("Connexion à MongoDB réussie !"))
@@ -14,6 +16,7 @@ mongoose
 
 const app = express();
 
+// répertoire de stockage des images sur le serveur
 app.use("/images", express.static(path.join(__dirname, "images")));
 
 app.use((req, res, next) => {

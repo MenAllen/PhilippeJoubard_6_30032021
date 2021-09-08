@@ -20,7 +20,16 @@ A specifications document for te API is available.
 			If your browser fails to launch, or shows a 404 error, navigate your browser to http://localhost:8080.
 				The app should reload automatically when you make a change to a file.
 				Use Ctrl+C in the terminal to stop the local server.
-- For backend application, just clone the repo https://github.com/MenAllen/PhilippeJoubard_6_30032021.git, launch "npm install" then "node server"
+
+- For backend application:
+		clone the repo https://github.com/MenAllen/PhilippeJoubard_6_30032021.git,
+		edit .env file to fill in DB & TOKEN with relevant strings:
+			DB: the process.env.DB string is used in app.js for connection with the MongoDB used.Example:
+				"mongodb+srv://<user>:<password>@cluster0.q0wyp.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"
+			TOKEN: the process.env.TOKEN string is used in users.js and auth.js. Example:
+				"MY_SECRET_TOKEN"
+			Note DB & TOKEN strings used for dev can be requested through mail to philippe.joubard@sfr.fr
+		launch "npm install" then "node server"
 
 
 ## General Description

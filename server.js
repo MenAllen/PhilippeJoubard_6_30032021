@@ -1,6 +1,7 @@
 const http = require("http");
 const app = require("./app");
 
+// Fonction Check et Validation du numéro de port
 const normalizePort = (val) => {
 	const port = parseInt(val, 10);
 
@@ -12,9 +13,12 @@ const normalizePort = (val) => {
 	}
 	return false;
 };
+
+// Initiaisation du Port
 const port = normalizePort(process.env.PORT || "3000");
 app.set("port", port);
 
+// Fonction de gestion des erreurs sur lancement serveur
 const errorHandler = (error) => {
 	if (error.syscall !== "listen") {
 		throw error;
@@ -35,6 +39,7 @@ const errorHandler = (error) => {
 	}
 };
 
+// Creation de l'objet HTTP server qui va écouter les requêtes sur le port choisi
 const server = http.createServer(app);
 
 server.on("error", errorHandler);

@@ -5,7 +5,7 @@ const fs = require("fs"); // File systeme pour les fichiers image
 // GET pour toutes les sauces
 // ==========================
 exports.getAllSauce = (req, res, next) => {
-	console.log("getAllSauce");
+	console.error("getAllSauce");
 
 	Sauce.find()
 		.then((sauces) => {
@@ -21,14 +21,20 @@ exports.getAllSauce = (req, res, next) => {
 exports.getOneSauce = (req, res, next) => {
 	console.log("getOneSauce");
 
-	Sauce.findOne({
-		_id: req.params.id,
-	})
+	Sauce.findOne({ _id: req.params.id })
 		.then((sauce) => {
+			if (!sauce) {
+				// La sauce n'existe pas
+				return res.status(404).json({ message: "sauce not found" });
+			}
+			// la sauce existe, on renvoie à l'utilisateur
 			res.status(200).json(sauce);
 		})
+
+		// Erreur requête findOne
 		.catch((error) => {
-			res.status(404).json({ error });
+			console.error(error);
+			res.status(500).json({ error });
 		});
 };
 
@@ -61,18 +67,75 @@ exports.createSauce = (req, res, next) => {
 exports.modifySauce = (req, res, next) => {
 	console.log("modifySauce");
 
-	// Deux formats possibles pour le body: avec ou sans image
-	const sauceObject = req.file
-		? {
-				// Si image est modifiée, récupérer aussi le nouveau nom de fichier
-				...JSON.parse(req.body.sauce),
-				imageUrl: `${req.protocol}://${req.get("host")}/images/${req.file.filename}`,
-		  }
-		: { ...req.body }; // Sinon, récupérer sauce dans le body
+	Sauce.findOne({ _id: req.params.id })
+		.then((sauce) => {
+			// Si la sauce n'existe pas, on le signale
+			if (!sauce) {
+				return res.status(404).json({ message: "sauce not found" });
+			}
 
-	Sauce.updateOne({ _id: req.params.id }, { ...sauceObject, _id: req.params.id })
-		.then(() => res.status(200).json({ message: "Sauce modified !" }))
-		.catch((error) => res.status(400).json({ error }));
+			// Si l'auteur de la sauce et l'id de l'utilisateur diffèrent
+			// alors l'action n'est pas autorisée
+			if (sauce.userId !== req.user) {
+				res.status(403).json({ message: "Unauthorized request" });
+				return sauce;
+			}
+
+			// Action autorisée. Deux formats possibles pour le body: avec ou sans image
+			const sauceObject = req.file
+				? {
+						// Si image est modifiée, récupérer aussi le nouveau nom de fichier
+						...JSON.parse(req.body.sauce),
+						imageUrl: `${req.protocol}://${req.get("host")}/images/${req.file.filename}`,
+				  }
+				: { ...req.body }; // Sinon, récupérer sauce dans le body
+
+			// On met à jour en base
+			Sauce.updateOne({ _id: req.params.id }, { ...sauceObject, _id: req.params.id })
+				.then(() => res.status(200).json({ message: "Sauce modified !" }))
+				.catch((error) => res.status(400).json({ error }));
+		})
+
+		// Erreur requête findOne
+		.catch((error) => {
+			console.error(error);
+			res.status(500).json({ error });
+		});
+};
+
+// DELETE pour suppression d'une sauce, id en paramètre
+// ====================================================
+exports.deleteSauce = (req, res, next) => {
+	console.log("deleteSauce");
+
+	Sauce.findOne({ _id: req.params.id })
+		.then((sauce) => {
+			// Si la sauce n'existe pas, on le signale
+			if (!sauce) {
+				return res.status(404).json({ message: "sauce not found" });
+			}
+
+			// Si l'auteur de la sauce et l'id de l'utilisateur diffèrent
+			// alors l'action n'est pas autorisée
+			if (sauce.userId !== req.user) {
+				res.status(403).json({ message: "Unauthorized request" });
+				return sauce;
+			}
+
+			// Sinon, on supprime la sauce et l'image
+			const filename = sauce.imageUrl.split("/images/")[1];
+			fs.unlink(`images/${filename}`, () => {
+				Sauce.deleteOne({ _id: req.params.id })
+					.then(() => res.status(200).json({ message: "Sauce deleted !" }))
+					.catch((error) => res.status(400).json({ error }));
+			});
+		})
+
+		// Erreur requête findOne
+		.catch((error) => {
+			console.error(error);
+			res.status(500).json({ error });
+		});
 };
 
 // POST pour like / dislike d'une sauce, id en paramètre
@@ -82,6 +145,12 @@ exports.likeSauce = (req, res, next) => {
 
 	Sauce.findOne({ _id: req.params.id })
 		.then((sauce) => {
+			// Si la sauce n'existe pas, on le signale
+			if (!sauce) {
+				return res.status(404).json({ message: "sauce not found" });
+			}
+
+			// La sauce existe, la demande peut être traitée
 			switch (req.body.like) {
 				case 0: // Enlever un Like ou un Dislike
 					if (sauce.usersLiked.find((user) => user === req.body.userId)) {
@@ -113,36 +182,15 @@ exports.likeSauce = (req, res, next) => {
 					break;
 
 				default: {
-					// Erreur
-					return res.status(500).json({ error });
+					// Valeur like erronée: bad request
+					return res.status(400).json({ message: "Bad request: like value error" });
 				}
 			}
 		})
-		.catch((error) => res.status(400).json(error));
-};
 
-// DELETE pour suppression d'une sauce, id en paramètre
-// ====================================================
-exports.deleteSauce = (req, res, next) => {
-	console.log("deleteSauce");
-
-	Sauce.findOne({ _id: req.params.id })
-		.then((sauce) => {
-			// Si l'auteur de la sauce et l'id de l'utilisateur diffèrent
-			// alors l'action n'est pas autorisée
-			if (sauce.userId !== req.user) {
-				res.status(403).json({ message: "Unauthorized request" });
-				return sauce;
-			}
-
-			// Sinon, on supprime la sauce et l'image
-			const filename = sauce.imageUrl.split("/images/")[1];
-			console.log(filename);
-			fs.unlink(`images/${filename}`, () => {
-				Sauce.deleteOne({ _id: req.params.id })
-					.then(() => res.status(200).json({ message: "Sauce deleted !" }))
-					.catch((error) => res.status(400).json({ error }));
-			});
-		})
-		.catch((error) => res.status(500).json({ error }));
+		// Erreur requête findOne
+		.catch((error) => {
+			console.error(error);
+			res.status(500).json(error);
+		});
 };

@@ -13,11 +13,13 @@ exports.signup = (req, res, next) => {
 				email: req.body.email,
 				password: hash,
 			});
-			user // Sauvegarde en base sur reponse success
-				.save()
+			user
+				.save() // Tentative de sauvegarde en base
+
+				// Sauvegarde OK
 				.then(() => res.status(201).json({ message: "User created !" }))
 
-				// Erreur 400 Bad Request sur reponse erreur
+				// Erreur 400 Bad Request: Erreur de validation si user existe
 				.catch((error) => res.status(400).json({ error }));
 		})
 		.catch((error) => res.status(500).json({ error }));
@@ -30,7 +32,7 @@ exports.login = (req, res, next) => {
 		.then((user) => {
 			if (!user) {
 				// l'utilisateur n'existe pas
-				return res.status(401).json({ error: "User not found !" });
+				return res.status(404).json({ message: "User not found" });
 			}
 			// L'utilisateur existe, on vérifie le password
 			bcrypt
@@ -38,7 +40,7 @@ exports.login = (req, res, next) => {
 				.then((valid) => {
 					if (!valid) {
 						// l'utilisateur existe mais le password ne correspond pas
-						return res.status(401).json({ error: "Invalid password !" });
+						return res.status(401).json({ message: "Invalid password" });
 					}
 					res.status(200).json({
 						// l'utilisateur existe et le password est le bon
@@ -49,6 +51,10 @@ exports.login = (req, res, next) => {
 				// Erreur de comparaison bcrypt.compare
 				.catch((error) => res.status(500).json({ error }));
 		})
-		// Erreur de recherche user.findone
-		.catch((error) => res.status(500).json({ error }));
+
+		// Erreur requête findOne
+		.catch((error) => {
+			console.error(error);
+			res.status(500).json({ error });
+		});
 };
