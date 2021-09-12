@@ -40,6 +40,7 @@ const errorHandler = (error) => {
 };
 
 // Creation de l'objet HTTP server qui va écouter les requêtes sur le port choisi
+
 const server = http.createServer(app);
 
 server.on("error", errorHandler);

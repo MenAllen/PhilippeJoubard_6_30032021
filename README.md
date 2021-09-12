@@ -29,7 +29,7 @@ A specifications document for te API is available.
 			TOKEN: the process.env.TOKEN string is used in users.js and auth.js. Example:
 				"MY_SECRET_TOKEN"
 			Note DB & TOKEN strings used for dev can be requested through mail to philippe.joubard@sfr.fr
-		launch "npm install" then "node server"
+		launch "npm install" then "node server". Note on startup a console message will indicate whether the connexion to db succeeded or not
 
 
 ## General Description
@@ -43,4 +43,8 @@ wants to create a web application where users can add their preferred own sauces
 - MongoDB, mongoose
 - Languages: HTML, CSS, Javascript
 
-## Additinal functions
+## Additional functions
+- jsonwebtoken to generate and decode token
+- brcrypt used to hash password
+- helmet to prevent security issues with HTML headers
+- express-mongo-sanitize to prevent injection attacks in mongoDB

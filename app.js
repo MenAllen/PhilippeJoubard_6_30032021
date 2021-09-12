@@ -1,6 +1,8 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const path = require("path");
+const helmet = require("helmet");
+const mongoSanitize = require("express-mongo-sanitize");
 
 const sauceRoutes = require("./routes/sauce");
 const userRoutes = require("./routes/user");
@@ -19,6 +21,7 @@ const app = express();
 // répertoire de stockage des images sur le serveur
 app.use("/images", express.static(path.join(__dirname, "images")));
 
+// configuration des headers
 app.use((req, res, next) => {
 	res.setHeader("Access-Control-Allow-Origin", "*");
 	res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content, Accept, Content-Type, Authorization");
@@ -28,6 +31,12 @@ app.use((req, res, next) => {
 
 // Remplace Appel à BodyParser maintenant inclus dans Express
 app.use(express.json());
+
+// activation du filtre de contenu
+app.use(mongoSanitize());
+
+// activation des protections d'entêtes
+app.use(helmet());
 
 app.use("/api/sauces", sauceRoutes);
 app.use("/api/auth", userRoutes);

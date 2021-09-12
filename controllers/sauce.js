@@ -44,7 +44,7 @@ exports.createSauce = (req, res, next) => {
 	console.log("createSauce");
 
 	const sauceObject = JSON.parse(req.body.sauce);
-	delete sauceObject._id;
+
 	const sauce = new Sauce({
 		...sauceObject,
 		imageUrl: `${req.protocol}://${req.get("host")}/images/${req.file.filename}`,
@@ -81,9 +81,17 @@ exports.modifySauce = (req, res, next) => {
 				return sauce;
 			}
 
+			// Si image est remplacée, on aura besoin du nom de fichier actuel
+			const currentfilename = sauce.imageUrl.split("/images/")[1];
+
 			// Action autorisée. Deux formats possibles pour le body: avec ou sans image
 			const sauceObject = req.file
 				? {
+						// Si image est modifiée, supprimer l'actuelle
+						...fs.unlink(`images/${currentfilename}`, () => {
+							console.log("image supprimée");
+						}),
+
 						// Si image est modifiée, récupérer aussi le nouveau nom de fichier
 						...JSON.parse(req.body.sauce),
 						imageUrl: `${req.protocol}://${req.get("host")}/images/${req.file.filename}`,
