@@ -1,13 +1,20 @@
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
+// in controllers/user.js
+const bcrypt = require("bcrypt"); // module de cryptage SHA1 pour password
+const jwt = require("jsonwebtoken"); // module d'authentification par token
+var validator = require("email-validator"); // module de validation de format pour email
 
 const User = require("../models/User");
 
 // POST pour signup d'un nouvel utilisateur
 // ========================================
 exports.signup = (req, res, next) => {
+	// Validation du format email
+	if (!validator.validate(req.param.email)) {
+		res.status(401).json({ message: "Invalid Password Format !" });
+	}
+
 	bcrypt
-		.hash(req.body.password, 10) // password hashé avec un sel de 10
+		.hash(req.body.password, 10) // password hashé
 		.then((hash) => {
 			const user = new User({
 				email: req.body.email,

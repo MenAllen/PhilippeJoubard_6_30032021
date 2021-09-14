@@ -1,12 +1,20 @@
 // in controllers/sauce.js
 const Sauce = require("../models/sauce"); // Schéma de données sauce
 const fs = require("fs"); // File systeme pour les fichiers image
+const regex = /[${&|]/; // Regex pour se proteger des injections sur les input sauce
+
+// Utilitaire d'effacement d'image: nécessaire car
+// multer copie l'image avant la vaidation de la requête
+// ======================================================
+cleanImage = (filename) => {
+	fs.unlink(`images/${filename}`, () => {
+		console.log("image supprimée");
+	});
+};
 
 // GET pour toutes les sauces
 // ==========================
 exports.getAllSauce = (req, res, next) => {
-	console.error("getAllSauce");
-
 	Sauce.find()
 		.then((sauces) => {
 			res.status(200).json(sauces);
@@ -19,8 +27,6 @@ exports.getAllSauce = (req, res, next) => {
 // GET d'une sauce, id en paramètre
 // ================================
 exports.getOneSauce = (req, res, next) => {
-	console.log("getOneSauce");
-
 	Sauce.findOne({ _id: req.params.id })
 		.then((sauce) => {
 			if (!sauce) {
@@ -41,9 +47,13 @@ exports.getOneSauce = (req, res, next) => {
 // POST de creation de sauce
 // =========================
 exports.createSauce = (req, res, next) => {
-	console.log("createSauce");
-
 	const sauceObject = JSON.parse(req.body.sauce);
+
+	// Si des caractères interdits sont présents, on sort après avoir supprimé l'image chargée par multer
+	if (regex.test(sauceObject.name) || regex.test(sauceObject.manufacturer) || regex.test(sauceObject.description) || regex.test(sauceObject.mainPepper) || regex.test(sauceObject.heat)) {
+		cleanImage(req.file.filename);
+		return res.status(400).json({ error: "Blacklisted characters detected" });
+	}
 
 	const sauce = new Sauce({
 		...sauceObject,
@@ -54,10 +64,11 @@ exports.createSauce = (req, res, next) => {
 		.save()
 		.then(() => {
 			res.status(201).json({
-				message: "Post saved successfully!",
+				message: "Sauce saved successfully!",
 			});
 		})
 		.catch((error) => {
+			cleanImage(req.file.filename);
 			res.status(400).json({ error });
 		});
 };
@@ -65,47 +76,57 @@ exports.createSauce = (req, res, next) => {
 // PUT pour modification d'une sauce, id en paramètre
 // ==================================================
 exports.modifySauce = (req, res, next) => {
-	console.log("modifySauce");
-
 	Sauce.findOne({ _id: req.params.id })
 		.then((sauce) => {
 			// Si la sauce n'existe pas, on le signale
 			if (!sauce) {
+				cleanImage(req.file.filename);
 				return res.status(404).json({ message: "sauce not found" });
 			}
 
 			// Si l'auteur de la sauce et l'id de l'utilisateur diffèrent
 			// alors l'action n'est pas autorisée
 			if (sauce.userId !== req.user) {
-				res.status(403).json({ message: "Unauthorized request" });
-				return sauce;
+				cleanImage(req.file.filename);
+				return res.status(403).json({ message: "Unauthorized request" });
 			}
 
-			// Si image est remplacée, on aura besoin du nom de fichier actuel
+			// Si l'image doit être remplacée, on aura besoin du nom de fichier actuel
 			const currentfilename = sauce.imageUrl.split("/images/")[1];
 
 			// Action autorisée. Deux formats possibles pour le body: avec ou sans image
-			const sauceObject = req.file
-				? {
-						// Si image est modifiée, supprimer l'actuelle
-						...fs.unlink(`images/${currentfilename}`, () => {
-							console.log("image supprimée");
-						}),
+			let sauceObject = {};
 
-						// Si image est modifiée, récupérer aussi le nouveau nom de fichier
-						...JSON.parse(req.body.sauce),
-						imageUrl: `${req.protocol}://${req.get("host")}/images/${req.file.filename}`,
-				  }
-				: { ...req.body }; // Sinon, récupérer sauce dans le body
+			if (req.file) {
+				// Avec image: Récupérer la sauce et le nouveau nom de fichier
+				sauceObject = JSON.parse(req.body.sauce);
+				sauceObject.imageUrl = `${req.protocol}://${req.get("host")}/images/${req.file.filename}`;
+			} else {
+				// Sans image, récupérer sauce dans le body
+				sauceObject = req.body;
+			}
 
-			// On met à jour en base
+			// Si des caractères interdits sont présents, on sort après avoir supprimé l'image reçue
+			if (regex.test(sauceObject.name) || regex.test(sauceObject.manufacturer) || regex.test(sauceObject.description) || regex.test(sauceObject.mainPepper) || regex.test(sauceObject.heat)) {
+				if (req.file) cleanImage(req.file.filename);
+				return res.status(400).json({ error: "Blacklisted characters detected" });
+			}
+
+			// On met à jour en base en supprimant l'image précédente si modifiée
 			Sauce.updateOne({ _id: req.params.id }, { ...sauceObject, _id: req.params.id })
-				.then(() => res.status(200).json({ message: "Sauce modified !" }))
-				.catch((error) => res.status(400).json({ error }));
+				.then(() => {
+					if (req.file) cleanImage(currentfilename);
+					res.status(200).json({ message: "Sauce modified !" });
+				})
+				.catch((error) => {
+					if (req.file) cleanImage(req.file.filename);
+					res.status(400).json({ error });
+				});
 		})
 
-		// Erreur requête findOne
+		// Erreur requête findOne, on supprime l'image si reçue
 		.catch((error) => {
+			if (req.file) cleanImage(req.file.filename);
 			console.error(error);
 			res.status(500).json({ error });
 		});
@@ -114,8 +135,6 @@ exports.modifySauce = (req, res, next) => {
 // DELETE pour suppression d'une sauce, id en paramètre
 // ====================================================
 exports.deleteSauce = (req, res, next) => {
-	console.log("deleteSauce");
-
 	Sauce.findOne({ _id: req.params.id })
 		.then((sauce) => {
 			// Si la sauce n'existe pas, on le signale
@@ -132,6 +151,7 @@ exports.deleteSauce = (req, res, next) => {
 
 			// Sinon, on supprime la sauce et l'image
 			const filename = sauce.imageUrl.split("/images/")[1];
+
 			fs.unlink(`images/${filename}`, () => {
 				Sauce.deleteOne({ _id: req.params.id })
 					.then(() => res.status(200).json({ message: "Sauce deleted !" }))
@@ -149,8 +169,6 @@ exports.deleteSauce = (req, res, next) => {
 // POST pour like / dislike d'une sauce, id en paramètre
 // =====================================================
 exports.likeSauce = (req, res, next) => {
-	console.log("likeSauce");
-
 	Sauce.findOne({ _id: req.params.id })
 		.then((sauce) => {
 			// Si la sauce n'existe pas, on le signale
