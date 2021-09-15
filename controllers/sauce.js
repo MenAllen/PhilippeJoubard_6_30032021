@@ -1,16 +1,8 @@
 // in controllers/sauce.js
 const Sauce = require("../models/sauce"); // Schéma de données sauce
 const fs = require("fs"); // File systeme pour les fichiers image
-const regex = /[${&|]/; // Regex pour se proteger des injections sur les input sauce
-
-// Utilitaire d'effacement d'image: nécessaire car
-// multer copie l'image avant la vaidation de la requête
-// ======================================================
-cleanImage = (filename) => {
-	fs.unlink(`images/${filename}`, () => {
-		console.log("image supprimée");
-	});
-};
+const service = require("../data.services");
+const regex = /[$]/; // Regex pour se proteger des injections sur les input sauce
 
 // GET pour toutes les sauces
 // ==========================
@@ -51,8 +43,8 @@ exports.createSauce = (req, res, next) => {
 
 	// Si des caractères interdits sont présents, on sort après avoir supprimé l'image chargée par multer
 	if (regex.test(sauceObject.name) || regex.test(sauceObject.manufacturer) || regex.test(sauceObject.description) || regex.test(sauceObject.mainPepper) || regex.test(sauceObject.heat)) {
-		cleanImage(req.file.filename);
-		return res.status(400).json({ error: "Blacklisted characters detected" });
+		service.cleanImage(req.file.filename);
+		return res.status(400).json({ message: "Blacklisted character detected" });
 	}
 
 	const sauce = new Sauce({
@@ -68,7 +60,7 @@ exports.createSauce = (req, res, next) => {
 			});
 		})
 		.catch((error) => {
-			cleanImage(req.file.filename);
+			service.cleanImage(req.file.filename);
 			res.status(400).json({ error });
 		});
 };
@@ -78,16 +70,16 @@ exports.createSauce = (req, res, next) => {
 exports.modifySauce = (req, res, next) => {
 	Sauce.findOne({ _id: req.params.id })
 		.then((sauce) => {
-			// Si la sauce n'existe pas, on le signale
+			// Si la sauce n'existe pas, on le signale et on supprime le fichier si reçu
 			if (!sauce) {
-				cleanImage(req.file.filename);
+				if (req.file) service.cleanImage(req.file.filename);
 				return res.status(404).json({ message: "sauce not found" });
 			}
 
 			// Si l'auteur de la sauce et l'id de l'utilisateur diffèrent
 			// alors l'action n'est pas autorisée
 			if (sauce.userId !== req.user) {
-				cleanImage(req.file.filename);
+				if (req.file) service.cleanImage(req.file.filename);
 				return res.status(403).json({ message: "Unauthorized request" });
 			}
 
@@ -108,25 +100,25 @@ exports.modifySauce = (req, res, next) => {
 
 			// Si des caractères interdits sont présents, on sort après avoir supprimé l'image reçue
 			if (regex.test(sauceObject.name) || regex.test(sauceObject.manufacturer) || regex.test(sauceObject.description) || regex.test(sauceObject.mainPepper) || regex.test(sauceObject.heat)) {
-				if (req.file) cleanImage(req.file.filename);
-				return res.status(400).json({ error: "Blacklisted characters detected" });
+				if (req.file) service.cleanImage(req.file.filename);
+				return res.status(400).json({ message: "Blacklisted character detected" });
 			}
 
 			// On met à jour en base en supprimant l'image précédente si modifiée
 			Sauce.updateOne({ _id: req.params.id }, { ...sauceObject, _id: req.params.id })
 				.then(() => {
-					if (req.file) cleanImage(currentfilename);
+					if (req.file) service.cleanImage(currentfilename);
 					res.status(200).json({ message: "Sauce modified !" });
 				})
 				.catch((error) => {
-					if (req.file) cleanImage(req.file.filename);
+					if (req.file) service.cleanImage(req.file.filename);
 					res.status(400).json({ error });
 				});
 		})
 
 		// Erreur requête findOne, on supprime l'image si reçue
 		.catch((error) => {
-			if (req.file) cleanImage(req.file.filename);
+			if (req.file) service.cleanImage(req.file.filename);
 			console.error(error);
 			res.status(500).json({ error });
 		});
@@ -206,6 +198,8 @@ exports.likeSauce = (req, res, next) => {
 							.catch((error) => res.status(400).json(error));
 					}
 					break;
+
+				// generateDocument(like)
 
 				default: {
 					// Valeur like erronée: bad request

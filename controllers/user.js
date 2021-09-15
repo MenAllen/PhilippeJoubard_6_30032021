@@ -1,6 +1,7 @@
 // in controllers/user.js
 const bcrypt = require("bcrypt"); // module de cryptage SHA1 pour password
 const jwt = require("jsonwebtoken"); // module d'authentification par token
+const service = require("../data.services"); // module service checkPassword
 var validator = require("email-validator"); // module de validation de format pour email
 
 const User = require("../models/User");
@@ -9,8 +10,13 @@ const User = require("../models/User");
 // ========================================
 exports.signup = (req, res, next) => {
 	// Validation du format email
-	if (!validator.validate(req.param.email)) {
-		res.status(401).json({ message: "Invalid Password Format !" });
+	if (!validator.validate(req.body.email)) {
+		return res.status(401).json({ message: "Invalid Mail Format !" });
+	}
+
+	// Validation du format password
+	if (!service.checkPassword(req.body.password)) {
+		return res.status(401).json({ message: "Invalid Password Format !" });
 	}
 
 	bcrypt

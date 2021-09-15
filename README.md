@@ -28,9 +28,9 @@ A specifications document for te API is available.
 				"mongodb+srv://<user>:<password>@cluster0.q0wyp.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"
 			TOKEN: the process.env.TOKEN string is used in users.js and auth.js. Example:
 				"MY_SECRET_TOKEN"
-			Note DB & TOKEN strings used for dev can be requested through mail to philippe.joubard@sfr.fr
+			Note DB & TOKEN strings used for dev can be requested through mail to philippe.joubard@sfr.fr,and a secure transfer initiated
 		launch "npm install" then "node server". Note on startup a console message will indicate whether the connexion to db succeeded or not
-
+		Note Password must be at least 8 chars, with at least one capital letter (A-Z), one small letter (a-z) and one number (0-9)
 
 ## General Description
 PIIQUANTE is dedicated to hot sauces creation, whose recipes are kept secrete. To inrease buzz, the company
