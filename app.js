@@ -12,7 +12,7 @@ const userRoutes = require("./routes/user"); // import des routes pour users
 // connexion à la base mongodb
 mongoose
 	.connect(process.env.DB, { useNewUrlParser: true, useUnifiedTopology: true })
-	.then(() => "MongoDB connexion succeeded !")
+	.then(() => console.log("MongoDB connexion succeeded !"))
 	.catch(() => console.log("MongoDB connexion failed !"));
 
 // Framework Express
