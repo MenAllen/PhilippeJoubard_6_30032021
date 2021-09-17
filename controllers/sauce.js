@@ -2,7 +2,6 @@
 const Sauce = require("../models/sauce"); // Schéma de données sauce
 const fs = require("fs"); // File systeme pour les fichiers image
 const service = require("../data.services");
-const regex = /[$]/; // Regex pour se proteger des injections sur les input sauce
 
 // GET pour toutes les sauces
 // ==========================
@@ -40,12 +39,6 @@ exports.getOneSauce = (req, res, next) => {
 // =========================
 exports.createSauce = (req, res, next) => {
 	const sauceObject = JSON.parse(req.body.sauce);
-
-	// Si des caractères interdits sont présents, on sort après avoir supprimé l'image chargée par multer
-	if (regex.test(sauceObject.name) || regex.test(sauceObject.manufacturer) || regex.test(sauceObject.description) || regex.test(sauceObject.mainPepper) || regex.test(sauceObject.heat)) {
-		service.cleanImage(req.file.filename);
-		return res.status(400).json({ message: "Blacklisted character detected" });
-	}
 
 	const sauce = new Sauce({
 		...sauceObject,
@@ -96,12 +89,6 @@ exports.modifySauce = (req, res, next) => {
 			} else {
 				// Sans image, récupérer sauce dans le body
 				sauceObject = req.body;
-			}
-
-			// Si des caractères interdits sont présents, on sort après avoir supprimé l'image reçue
-			if (regex.test(sauceObject.name) || regex.test(sauceObject.manufacturer) || regex.test(sauceObject.description) || regex.test(sauceObject.mainPepper) || regex.test(sauceObject.heat)) {
-				if (req.file) service.cleanImage(req.file.filename);
-				return res.status(400).json({ message: "Blacklisted character detected" });
 			}
 
 			// On met à jour en base en supprimant l'image précédente si modifiée
@@ -199,11 +186,9 @@ exports.likeSauce = (req, res, next) => {
 					}
 					break;
 
-				// generateDocument(like)
-
 				default: {
 					// Valeur like erronée: bad request
-					return res.status(400).json({ message: "Bad request: like value error" });
+					res.status(400).json({ message: "Bad request: like value error" });
 				}
 			}
 		})

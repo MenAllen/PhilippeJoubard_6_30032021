@@ -1,7 +1,6 @@
 const express = require("express"); // node.js web framework
 const mongoose = require("mongoose"); // outil de modelisation, passerelle entre mongoDB et Node.js
 const helmet = require("helmet"); // securise Express apps en configurant les headers HTTP.
-const mongoSanitize = require("express-mongo-sanitize"); // protection contre les injections NoSql
 const path = require("path"); // gestion des répertoires et chemins de fichiers
 const rateLimit = require("express-rate-limit"); // protection contre les attaques en force brute
 require("dotenv").config(); // variables d'environnement chargées à partir du fichier .env
@@ -29,17 +28,19 @@ app.use((req, res, next) => {
 // BodyParser maintenant inclus dans Express
 app.use(express.json());
 
-// content-filter: protection contre les injections NoSql
-app.use(mongoSanitize());
-
-// activation des protections d'entêtes
+// configuration des entêtes HTTP
 app.use(helmet());
 
-// configuration à 100 requêtes sur 15' par IP et application du limiteur
+// configuration de l'entête X-XSS-Protecion dans l'entête HTTP
+app.use((req, res, next) => {
+	res.setHeader("X-XSS-Protection", "1; mode=block");
+	next();
+});
+
+// configuration à 200 requêtes sur 15' par IP et application du limiteur
 const limiter = rateLimit({
 	windowMs: 15 * 60 * 1000,
-	max: 100,
-	message: "Too many messages from this IP, please try again in 15mn",
+	max: 200,
 });
 app.use(limiter);
 

@@ -1,24 +1,12 @@
 // in controllers/user.js
 const bcrypt = require("bcrypt"); // module de cryptage SHA1 pour password
 const jwt = require("jsonwebtoken"); // module d'authentification par token
-const service = require("../data.services"); // module service checkPassword
-var validator = require("email-validator"); // module de validation de format pour email
 
 const User = require("../models/User");
 
 // POST pour signup d'un nouvel utilisateur
 // ========================================
 exports.signup = (req, res, next) => {
-	// Validation du format email
-	if (!validator.validate(req.body.email)) {
-		return res.status(401).json({ message: "Invalid Mail Format !" });
-	}
-
-	// Validation du format password
-	if (!service.checkPassword(req.body.password)) {
-		return res.status(401).json({ message: "Invalid Password Format !" });
-	}
-
 	bcrypt
 		.hash(req.body.password, 10) // password hashé
 		.then((hash) => {
@@ -47,7 +35,8 @@ exports.login = (req, res, next) => {
 				// l'utilisateur n'existe pas
 				return res.status(404).json({ message: "User not found" });
 			}
-			// L'utilisateur existe, on vérifie le password
+
+			// L'utilisateur existe, on vérifie que le password est le bon
 			bcrypt
 				.compare(req.body.password, user.password)
 				.then((valid) => {

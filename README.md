@@ -47,4 +47,4 @@ wants to create a web application where users can add their preferred own sauces
 - jsonwebtoken to generate and decode token
 - brcrypt used to hash password
 - helmet to prevent security issues with HTML headers
-- express-mongo-sanitize to prevent injection attacks in mongoDB
+- joi to validate inputs and prevent injection attacks in mongoDB
