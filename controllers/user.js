@@ -33,7 +33,7 @@ exports.login = (req, res, next) => {
 		.then((user) => {
 			if (!user) {
 				// l'utilisateur n'existe pas
-				return res.status(404).json({ message: "User not found" });
+				return res.status(404).json({ message: "Invalid credential" });
 			}
 
 			// L'utilisateur existe, on vérifie que le password est le bon
@@ -42,7 +42,7 @@ exports.login = (req, res, next) => {
 				.then((valid) => {
 					if (!valid) {
 						// l'utilisateur existe mais le password ne correspond pas
-						return res.status(401).json({ message: "Invalid password" });
+						return res.status(401).json({ message: "Invalid credential" });
 					}
 					res.status(200).json({
 						// l'utilisateur existe et le password est le bon
